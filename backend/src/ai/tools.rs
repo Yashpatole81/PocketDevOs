@@ -83,13 +83,9 @@ impl AiTools {
         let mut result = Vec::new();
         while let Ok(Some(entry)) = entries.next_entry().await {
             let name = entry.file_name().to_string_lossy().to_string();
-            let ft = entry.file_type().await.unwrap_or_else(|_| {
-                std::fs::metadata(entry.path())
-                    .map(|m| m.file_type())
-                    .unwrap_or_else(|_| std::fs::FileType::from(std::os::unix::fs::FileTypeExt::block_device()))
-            });
+            let ft = entry.file_type().await.ok();
 
-            let icon = if ft.is_dir() { "📁" } else { "📄" };
+            let icon = if ft.map(|f| f.is_dir()).unwrap_or(false) { "📁" } else { "📄" };
             result.push(format!("{} {}", icon, name));
         }
 
@@ -105,21 +101,34 @@ impl AiTools {
             .get("command")
             .and_then(|c| c.as_str())
             .ok_or("command required")?;
+        let default_cwd = std::env::var("HOME").unwrap_or_else(|_| "/".to_string());
         let cwd = args
             .get("cwd")
             .and_then(|c| c.as_str())
-            .unwrap_or_else(|| std::env::var("HOME").unwrap_or_else(|_| "/".to_string()).as_str());
+            .unwrap_or(&default_cwd);
 
-        let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
+        let shell = if cfg!(windows) {
+            std::env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".to_string())
+        } else {
+            std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string())
+        };
 
         let output = timeout(
             Duration::from_secs(30),
-            Command::new(&shell)
-                .arg("-c")
-                .arg(command)
-                .current_dir(cwd)
-                .env("TERM", "dumb")
-                .output(),
+            if cfg!(windows) {
+                Command::new(&shell)
+                    .arg("/C")
+                    .arg(command)
+                    .current_dir(cwd)
+                    .output()
+            } else {
+                Command::new(&shell)
+                    .arg("-c")
+                    .arg(command)
+                    .current_dir(cwd)
+                    .env("TERM", "dumb")
+                    .output()
+            },
         )
         .await;
 

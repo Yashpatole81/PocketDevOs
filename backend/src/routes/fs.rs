@@ -55,18 +55,14 @@ async fn readdir_handler(
             while let Ok(Some(entry)) = rd.next_entry().await {
                 let name = entry.file_name().to_string_lossy().to_string();
                 let path = entry.path().to_string_lossy().to_string();
-                let ft = entry.file_type().await.unwrap_or_else(|_| {
-                    std::fs::metadata(&path)
-                        .map(|m| m.file_type())
-                        .unwrap_or_else(|_| std::fs::FileType::from(std::os::unix::fs::FileTypeExt::block_device()))
-                });
+                let ft = entry.file_type().await.ok();
 
                 items.push(FsEntry {
                     name,
                     path,
-                    is_directory: ft.is_dir(),
-                    is_file: ft.is_file(),
-                    is_symlink: ft.is_symlink(),
+                    is_directory: ft.map(|f| f.is_dir()).unwrap_or(false),
+                    is_file: ft.map(|f| f.is_file()).unwrap_or(false),
+                    is_symlink: ft.map(|f| f.is_symlink()).unwrap_or(false),
                 });
             }
             items

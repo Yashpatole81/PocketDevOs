@@ -1,13 +1,13 @@
 # Rust
-backend/target/
-backend/Cargo.lock
+target/
+Cargo.lock
 **/*.rs.bk
 
 # Node
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
-
+frontend/package-lock.json
 # IDEs
 .vscode/
 .idea/

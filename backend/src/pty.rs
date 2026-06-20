@@ -48,7 +48,11 @@ impl PtyManager {
         let id = Uuid::new_v4().to_string();
         let cols = cols.unwrap_or(80);
         let rows = rows.unwrap_or(24);
-        let cwd = cwd.unwrap_or_else(|| std::env::var("HOME").unwrap_or_else(|_| "/".to_string()));
+        let cwd = cwd.unwrap_or_else(|| {
+            std::env::var("HOME")
+                .or_else(|_| std::env::var("USERPROFILE"))
+                .unwrap_or_else(|_| ".".to_string())
+        });
         let shell = Self::detect_shell();
 
         info!("Creating PTY session {}: {}x{} cwd={} shell={}", id, cols, rows, cwd, shell);
@@ -162,7 +166,10 @@ impl PtyManager {
             }
 
             // Wait for child process
-            let code = child.wait().unwrap_or(1);
+            let status = child.wait().ok();
+            let code = status
+                .map(|s| s.exit_code() as i32)
+                .unwrap_or(1);
             let _ = exit_tx_task.send(code);
             info!("[{}] PTY process exited with code {}", id_for_task, code);
         });
@@ -251,13 +258,29 @@ impl PtyManager {
 
     /// Detect the default shell
     fn detect_shell() -> String {
-        std::env::var("SHELL").unwrap_or_else(|_| {
+        // Check SHELL env var first (Unix/Termux)
+        if let Ok(shell) = std::env::var("SHELL") {
+            return shell;
+        }
+
+        // Windows: use PowerShell or cmd
+        #[cfg(windows)]
+        {
+            if let Ok(comspec) = std::env::var("COMSPEC") {
+                return comspec;
+            }
+            return "cmd.exe".to_string();
+        }
+
+        // Unix fallback
+        #[cfg(not(windows))]
+        {
             if std::path::Path::new("/data/data/com.termux/files/usr/bin/bash").exists() {
                 "/data/data/com.termux/files/usr/bin/bash".to_string()
             } else {
                 "/bin/bash".to_string()
             }
-        })
+        }
     }
 }
 

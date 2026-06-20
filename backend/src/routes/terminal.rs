@@ -16,9 +16,9 @@ pub fn terminal_routes() -> Router<AppState> {
     Router::new()
         .route("/create", post(create_session))
         .route("/list", get(list_sessions))
-        .route("/:id", delete(kill_session))
-        .route("/:id/resize", post(resize_session))
-        .route("/:id/ws", get(ws_handler))
+        .route("/{id}", delete(kill_session))
+        .route("/{id}/resize", post(resize_session))
+        .route("/{id}/ws", get(ws_handler))
 }
 
 #[derive(Deserialize)]
@@ -90,7 +90,7 @@ async fn ws_handler(
     ws.on_upgrade(move |socket| handle_terminal_socket(socket, id, state))
 }
 
-async fn handle_terminal_socket(socket: WebSocket, id: String, state: AppState) {
+async fn handle_terminal_socket(mut socket: WebSocket, id: String, state: AppState) {
     info!("WebSocket connected for session {}", id);
 
     // Verify session exists
@@ -129,13 +129,13 @@ async fn handle_terminal_socket(socket: WebSocket, id: String, state: AppState) 
         loop {
             tokio::select! {
                 Ok(data) = stdout_rx.recv() => {
-                    if sender.send(Message::Text(data)).await.is_err() {
+                    if sender.send(Message::Text(data.into())).await.is_err() {
                         break;
                     }
                 }
                 Ok(code) = exit_rx.recv() => {
                     let msg = format!("\r\n[Process exited with code {}]\r\n", code);
-                    let _ = sender.send(Message::Text(msg)).await;
+                    let _ = sender.send(Message::Text(msg.into())).await;
                     let _ = sender.close().await;
                     break;
                 }
@@ -151,6 +151,7 @@ async fn handle_terminal_socket(socket: WebSocket, id: String, state: AppState) 
         while let Some(Ok(msg)) = receiver.next().await {
             match msg {
                 Message::Text(text) => {
+                    let text: String = text.to_string();
                     // Check for resize message
                     if text.starts_with('{') {
                         if let Ok(resize) = serde_json::from_str::<ResizeMsg>(&text) {
@@ -168,7 +169,7 @@ async fn handle_terminal_socket(socket: WebSocket, id: String, state: AppState) 
                 }
                 Message::Close(_) => break,
                 Message::Binary(data) => {
-                    if let Ok(text) = String::from_utf8(data) {
+                    if let Ok(text) = String::from_utf8(data.to_vec()) {
                         if pty_for_stdin.write(&id_stdin, &text).await.is_err() {
                             break;
                         }

@@ -32,8 +32,10 @@ impl WorkspaceGuard {
         // Always authorize home directory
         if let Ok(home) = std::env::var("HOME") {
             roots.push(PathBuf::from(home));
+        } else if let Ok(profile) = std::env::var("USERPROFILE") {
+            roots.push(PathBuf::from(profile));
         } else {
-            roots.push(PathBuf::from("/"));
+            roots.push(PathBuf::from("."));
         }
         // On Termux, also allow Termux prefix
         if let Ok(prefix) = std::env::var("PREFIX") {
