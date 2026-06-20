@@ -1,0 +1,53 @@
+[package]
+name = "pocketdevos"
+version = "0.2.0"
+edition = "2021"
+authors = ["Yashpatole81"]
+description = "AI-native development workspace for Android via Termux - Rust backend"
+license = "Apache-2.0"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.42", features = ["full"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+
+# HTTP server + WebSocket
+axum = { version = "0.8", features = ["ws"] }
+tower = { version = "0.5", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
+hyper = { version = "1.5", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# HTTP client (for AI APIs)
+reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls"], default-features = false }
+eventsource-stream = "0.2"
+futures = "0.3"
+futures-util = "0.3"
+
+# PTY
+portable-pty = "0.9"
+
+# Utilities
+uuid = { version = "1.11", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+rand = "0.8"
+base64 = "0.22"
+
+# Tracing / logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Filesystem
+notify = { version = "7.0", default-features = false, features = ["macos_kqueue"] }
+async-stream = "0.3"
+
+[profile.dev]
+opt-level = 0
+debug = true

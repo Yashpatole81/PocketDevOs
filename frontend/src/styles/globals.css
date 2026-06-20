@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0a0a;
+  --color-surface-1: #141414;
+  --color-surface-2: #1e1e1e;
+  --color-surface-3: #2a2a2a;
+  --color-border: #333333;
+  --color-text-primary: #e0e0e0;
+  --color-text-secondary: #888888;
+  --color-text-muted: #555555;
+  --color-accent: #4ade80;
+  --color-accent-hover: #22c55e;
+  --color-danger: #f87171;
+  --color-warning: #fbbf24;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border);
+}
+
+/* Selection */
+::selection {
+  background: rgba(74, 222, 128, 0.3);
+  color: var(--color-text-primary);
+}
+
+/* Touch action */
+.touch-pan-x {
+  touch-action: pan-x;
+}
+.touch-pan-y {
+  touch-action: pan-y;
+}
+
+/* Terminal overrides */
+.xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-3) transparent;
+}
